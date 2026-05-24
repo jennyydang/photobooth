@@ -1,0 +1,156 @@
+.photobooth {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #030712 0%, #1a0533 50%, #030712 100%);
+  color: white;
+
+  &__container {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  &__header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  &__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    background: linear-gradient(to right, #f472b6, #a78bfa, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  // ── Welcome ──────────────────────────────────────────────────────────────
+  &__welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    text-align: center;
+    max-width: 36rem;
+    margin: 0 auto;
+  }
+
+  &__welcome-hero {
+    font-size: 6rem;
+    animation: bounce 2s infinite;
+  }
+
+  &__welcome-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 0.75rem;
+  }
+
+  &__welcome-text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.125rem;
+    line-height: 1.7;
+  }
+
+  &__features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+  }
+
+  &__start-btn {
+    padding: 1.25rem 3rem;
+    border-radius: 9999px;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: white;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #e91e8c, #9c27b0, #3f51b5);
+    box-shadow: 0 20px 60px rgba(156, 39, 176, 0.35);
+    transition: transform 0.15s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
+  // ── Review ──────────────────────────────────────────────────────────────
+  &__review {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: flex-start;
+    justify-content: center;
+
+    @media (min-width: 1024px) {
+      flex-direction: row;
+    }
+  }
+
+  &__review-strip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__review-photos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  // ── Share ────────────────────────────────────────────────────────────────
+  &__share {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: flex-start;
+    justify-content: center;
+
+    @media (min-width: 1024px) {
+      flex-direction: row;
+    }
+  }
+
+  // ── Print ────────────────────────────────────────────────────────────────
+  &__print {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: flex-start;
+    justify-content: center;
+
+    @media (min-width: 1024px) {
+      flex-direction: row;
+    }
+  }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}

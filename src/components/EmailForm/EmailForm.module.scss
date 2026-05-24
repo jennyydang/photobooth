@@ -1,0 +1,88 @@
+.email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: white;
+  }
+
+  &__success {
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    color: #4ade80;
+    text-align: center;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    &:focus {
+      border-color: #e91e8c;
+    }
+  }
+
+  &__checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+
+    &-label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.875rem;
+    }
+  }
+
+  &__error {
+    color: #f87171;
+    font-size: 0.875rem;
+  }
+
+  &__btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    color: white;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #e91e8c, #9c27b0);
+    transition: all 0.2s ease;
+
+    &:hover:not(&--loading) {
+      opacity: 0.9;
+    }
+
+    &:active:not(&--loading) {
+      transform: scale(0.97);
+    }
+
+    &--loading {
+      background: rgba(255, 255, 255, 0.2);
+      cursor: wait;
+    }
+  }
+}
