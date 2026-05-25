@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { CapturedPhoto, DesignConfig, LayoutConfig } from '@/types';
-import { composeGifFrame, composePoseFrame } from '@/utils/imageUtils';
+import { composeGifFrame, composeAllPosesFrame, composeStrip } from '@/utils/imageUtils';
 
 export function useGif() {
   const [gifUrl, setGifUrl] = useState<string | null>(null);
@@ -84,16 +84,12 @@ export function useGif() {
   );
 
   /**
-   * Build a per-pose strip GIF.
+   * Build a strip GIF where ALL poses' getting-ready clips play simultaneously.
    *
-   * Structure of output GIF:
-   *   For each pose i in 0..N-1:
-   *     Getting-ready frames: strip with slots 0..i-1 = captured photos,
-   *       slot i = live frame (sub-sampled), slots i+1..N-1 = placeholder.
-   *   Final frame: complete strip with all captured photos.
-   *
-   * This gives a single animated GIF that tells the story of the whole session
-   * — getting ready for each shot in sequence.
+   * Each GIF frame composites one time-step from every pose's frame array at once —
+   * slot 0 shows pose-0's frame, slot 1 shows pose-1's frame, etc. — so all
+   * the "getting ready" moments animate in sync across the full strip.
+   * A final held frame shows the completed strip with every captured photo.
    */
   const createPoseStripGif = useCallback(
     async (
@@ -103,7 +99,9 @@ export function useGif() {
       design: DesignConfig | null
     ) => {
       const totalPoses = layout.photoCount;
-      if (poseFrames.length === 0 && capturedPhotos.length === 0) {
+      const capturedPhotoUrls = capturedPhotos.map((p) => p.dataUrl);
+
+      if (poseFrames.flat().length === 0 && capturedPhotos.length === 0) {
         setError('No frames available');
         return;
       }
@@ -116,60 +114,44 @@ export function useGif() {
         const gifW = Math.min(layout.canvasWidth, 480);
         const gifH = Math.round(gifW / aspect);
 
-        const allFrames: string[] = [];
-
-        for (let poseIdx = 0; poseIdx < totalPoses; poseIdx++) {
-          const frames = poseFrames[poseIdx] ?? [];
-          if (frames.length === 0) continue;
-
-          // Sub-sample to max 8 frames per pose to keep GIF size reasonable
-          const maxPerPose = 8;
-          const step = Math.max(1, Math.floor(frames.length / maxPerPose));
-          const sampled = frames.filter((_, i) => i % step === 0).slice(0, maxPerPose);
-
-          const capturedSoFar = capturedPhotos.slice(0, poseIdx).map((p) => p.dataUrl);
-
-          for (const liveFrame of sampled) {
-            const url = await composePoseFrame(
-              layout,
-              poseIdx,
-              liveFrame,
-              capturedSoFar,
-              design,
-              gifW,
-              gifH
-            );
-            allFrames.push(url);
+        // Normalise every pose's frame array to the same target length so all
+        // slots step in sync. Poses with no frames get null placeholders.
+        const TARGET = 14;
+        const normalized: (string | null)[][] = [];
+        for (let i = 0; i < totalPoses; i++) {
+          const frames = poseFrames[i] ?? [];
+          if (frames.length === 0) {
+            normalized.push(Array(TARGET).fill(null));
+          } else {
+            const step = Math.max(1, Math.floor(frames.length / TARGET));
+            const sampled = frames.filter((_, idx) => idx % step === 0).slice(0, TARGET);
+            // Pad to TARGET by repeating the last frame
+            while (sampled.length < TARGET) sampled.push(sampled[sampled.length - 1]);
+            normalized.push(sampled);
           }
         }
 
-        // Final frame: complete strip with all photos
-        if (capturedPhotos.length > 0) {
-          const { composeStrip } = await import('@/utils/imageUtils');
-          const finalUrl = await composeStrip(
-            layout,
-            capturedPhotos.map((p) => p.dataUrl),
-            design,
-            gifW / layout.canvasWidth
+        // Compose TARGET frames where every slot animates simultaneously
+        const allFrames: string[] = [];
+        for (let t = 0; t < TARGET; t++) {
+          const slotFrames = normalized.map((frames) => frames[t] ?? null);
+          const url = await composeAllPosesFrame(
+            layout, slotFrames, capturedPhotoUrls, design, gifW, gifH
           );
-          allFrames.push(finalUrl);
+          allFrames.push(url);
         }
 
-        if (allFrames.length === 0) {
-          setError('No frames to animate');
-          setIsCreating(false);
-          return;
+        // Hold the completed strip for ~1 s at the end (5 identical frames × 0.2 s)
+        if (capturedPhotos.length > 0) {
+          const finalUrl = await composeStrip(
+            layout, capturedPhotoUrls, design, gifW / layout.canvasWidth
+          );
+          for (let i = 0; i < 5; i++) allFrames.push(finalUrl);
         }
 
         const gifshot = (await import('gifshot')).default;
         gifshot.createGIF(
-          {
-            images: allFrames,
-            gifWidth: gifW,
-            gifHeight: gifH,
-            interval: 0.2,
-            sampleInterval: 10,
-          },
+          { images: allFrames, gifWidth: gifW, gifHeight: gifH, interval: 0.18, sampleInterval: 10 },
           (result) => {
             setIsCreating(false);
             if (result.error) setError(result.errorMsg ?? 'Failed to create GIF');

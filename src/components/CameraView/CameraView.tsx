@@ -100,7 +100,7 @@ export function CameraView() {
   };
 
   return (
-    <div className={cls(styles['camera-view'], 'flex flex-col items-center gap-6 w-full max-w-3xl mx-auto')}>
+    <div className={cls(styles['camera-view'], 'flex flex-col items-center gap-5 w-full max-w-2xl mx-auto')}>
       <div className={cls(styles['camera-view__header'], 'flex items-center justify-between w-full')}>
         <h2 className={cls(styles['camera-view__title'], 'text-2xl font-bold text-gray-900 dark:text-white')}>
           {selectedLayout.name}
@@ -118,7 +118,7 @@ export function CameraView() {
         </div>
       </div>
 
-      <div className={cls(styles['camera-view__viewport'], 'relative w-full rounded-2xl overflow-hidden bg-black aspect-video')}>
+      <div className={cls(styles['camera-view__viewport'], 'relative w-full rounded-2xl overflow-hidden bg-black')} style={{ aspectRatio: '4/3' }}>
         {error ? (
           <div className={cls(styles['camera-view__error'], 'absolute inset-0 flex items-center justify-center text-red-400 text-center p-6')}>
             <div>
@@ -155,7 +155,7 @@ export function CameraView() {
             disabled={isCapturing || !isReady || !!error}
             className={cls(
               `${styles['camera-view__btn']} ${isCapturing || !isReady ? styles['camera-view__btn--disabled'] : ''}`,
-              `px-10 py-4 rounded-full font-bold text-lg transition-all text-white ${isCapturing || !isReady ? 'bg-gray-300 dark:bg-white/20 cursor-not-allowed opacity-50' : 'bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 active:scale-95 shadow-lg shadow-pink-500/30'}`
+              `w-full max-w-xs py-5 rounded-full font-bold text-lg transition-all text-white ${isCapturing || !isReady ? 'bg-gray-300 dark:bg-white/20 cursor-not-allowed opacity-50' : 'bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 active:scale-95 shadow-lg shadow-pink-500/30'}`
             )}
           >
             {isCapturing ? `📸 Capturing ${currentPhotoIndex + 1}/${totalPhotos}…` : 'Start Session'}

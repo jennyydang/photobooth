@@ -322,6 +322,73 @@ export async function generateLayoutTemplate(layout: LayoutConfig): Promise<stri
   return canvas.toDataURL('image/png');
 }
 
+/**
+ * Compose a single "all-at-once" getting-ready frame.
+ * Each slot independently shows its own live frame, a captured photo, or a placeholder.
+ * slotFrames[i] = live frame for slot i (null = fall back to captured photo or placeholder).
+ */
+export async function composeAllPosesFrame(
+  layout: LayoutConfig,
+  slotFrames: (string | null)[],
+  capturedPhotoUrls: string[],
+  design: DesignConfig | null,
+  outputW: number,
+  outputH: number
+): Promise<string> {
+  const canvas = document.createElement('canvas');
+  canvas.width = outputW;
+  canvas.height = outputH;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, outputW, outputH);
+
+  const sx = outputW / layout.canvasWidth;
+  const sy = outputH / layout.canvasHeight;
+
+  // Pre-load all needed images in parallel
+  const imageCache = new Map<string, HTMLImageElement>();
+  const toLoad = new Set<string>();
+  for (let i = 0; i < layout.photoSlots.length; i++) {
+    const src = slotFrames[i] ?? capturedPhotoUrls[i] ?? null;
+    if (src) toLoad.add(src);
+  }
+  await Promise.all([...toLoad].map(async (src) => {
+    imageCache.set(src, await loadImage(src));
+  }));
+
+  for (let i = 0; i < layout.photoSlots.length; i++) {
+    const slot = layout.photoSlots[i];
+    const dx = slot.x * layout.canvasWidth * sx;
+    const dy = slot.y * layout.canvasHeight * sy;
+    const dw = slot.width * layout.canvasWidth * sx;
+    const dh = slot.height * layout.canvasHeight * sy;
+
+    const src = slotFrames[i] ?? capturedPhotoUrls[i] ?? null;
+    if (src && imageCache.has(src)) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(dx, dy, dw, dh);
+      ctx.clip();
+      drawCoverFit(ctx, imageCache.get(src)!, dx, dy, dw, dh);
+      ctx.restore();
+    } else {
+      drawPlaceholderSlot(ctx, dx, dy, dw, dh);
+    }
+  }
+
+  const g = layout.graphicSlot;
+  await drawGraphicSlot(
+    ctx, design,
+    g.x * layout.canvasWidth * sx,
+    g.y * layout.canvasHeight * sy,
+    g.width * layout.canvasWidth * sx,
+    g.height * layout.canvasHeight * sy
+  );
+
+  return canvas.toDataURL('image/jpeg', 0.82);
+}
+
 export function downloadDataUrl(dataUrl: string, filename: string) {
   const a = document.createElement('a');
   a.href = dataUrl;
