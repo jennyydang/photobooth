@@ -7,7 +7,7 @@
   &__title {
     font-size: 1.125rem;
     font-weight: 700;
-    color: white;
+    color: var(--text-primary);
   }
 
   &__actions {
@@ -19,21 +19,21 @@
     flex: 1;
     padding: 0.5rem 1rem;
     border-radius: 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover:not(&--disabled) {
-      background: rgba(255, 255, 255, 0.15);
+      background: var(--card-hover);
     }
 
     &--disabled {
-      border-color: rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.3);
+      border-color: var(--border);
+      color: var(--text-muted);
       cursor: not-allowed;
     }
   }
@@ -47,8 +47,8 @@
     border-radius: 0.5rem;
     object-fit: contain;
     max-height: 8rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     display: block;
   }
 
@@ -76,7 +76,7 @@
   }
 
   &__hint {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-muted);
     font-size: 0.75rem;
   }
 }

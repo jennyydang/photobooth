@@ -1,6 +1,7 @@
 export type PrintSize = '2x6' | '4x6';
 export type Orientation = 'vertical' | 'horizontal';
 export type StyleMode = 'bem' | 'tailwind';
+export type ThemeMode = 'light' | 'dark';
 export type AppState =
   | 'welcome'
   | 'layout-select'

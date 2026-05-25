@@ -9,7 +9,8 @@ interface PhotoBoothState {
   selectedDesign: DesignConfig | null;
   capturedPhotos: CapturedPhoto[];
   currentPhotoIndex: number;
-  preparationFrames: string[];
+  /** poseFrames[i] holds the getting-ready frames captured during pose i's countdown */
+  poseFrames: string[][];
   template: string | null;
   gifUrl: string | null;
   compositeImageUrl: string | null;
@@ -21,7 +22,7 @@ type Action =
   | { type: 'SELECT_DESIGN'; payload: DesignConfig }
   | { type: 'ADD_PHOTO'; payload: CapturedPhoto }
   | { type: 'SET_CURRENT_PHOTO_INDEX'; payload: number }
-  | { type: 'ADD_PREP_FRAME'; payload: string }
+  | { type: 'ADD_POSE_FRAME'; payload: { frame: string; poseIndex: number } }
   | { type: 'SET_TEMPLATE'; payload: string | null }
   | { type: 'SET_GIF_URL'; payload: string | null }
   | { type: 'SET_COMPOSITE_URL'; payload: string | null }
@@ -33,7 +34,7 @@ const initialState: PhotoBoothState = {
   selectedDesign: null,
   capturedPhotos: [],
   currentPhotoIndex: 0,
-  preparationFrames: [],
+  poseFrames: [],
   template: null,
   gifUrl: null,
   compositeImageUrl: null,
@@ -44,15 +45,20 @@ function reducer(state: PhotoBoothState, action: Action): PhotoBoothState {
     case 'SET_APP_STATE':
       return { ...state, appState: action.payload };
     case 'SELECT_LAYOUT':
-      return { ...state, selectedLayout: action.payload, capturedPhotos: [], currentPhotoIndex: 0, preparationFrames: [] };
+      return { ...state, selectedLayout: action.payload, capturedPhotos: [], currentPhotoIndex: 0, poseFrames: [] };
     case 'SELECT_DESIGN':
       return { ...state, selectedDesign: action.payload };
     case 'ADD_PHOTO':
       return { ...state, capturedPhotos: [...state.capturedPhotos, action.payload] };
     case 'SET_CURRENT_PHOTO_INDEX':
       return { ...state, currentPhotoIndex: action.payload };
-    case 'ADD_PREP_FRAME':
-      return { ...state, preparationFrames: [...state.preparationFrames, action.payload] };
+    case 'ADD_POSE_FRAME': {
+      const { frame, poseIndex } = action.payload;
+      const updated = [...state.poseFrames];
+      if (!updated[poseIndex]) updated[poseIndex] = [];
+      updated[poseIndex] = [...updated[poseIndex], frame];
+      return { ...state, poseFrames: updated };
+    }
     case 'SET_TEMPLATE':
       return { ...state, template: action.payload };
     case 'SET_GIF_URL':
@@ -72,7 +78,7 @@ interface PhotoBoothContextType extends PhotoBoothState {
   selectDesign: (design: DesignConfig) => void;
   addPhoto: (photo: CapturedPhoto) => void;
   setCurrentPhotoIndex: (index: number) => void;
-  addPreparationFrame: (dataUrl: string) => void;
+  addPoseFrame: (frame: string, poseIndex: number) => void;
   setTemplate: (template: string | null) => void;
   setGifUrl: (url: string | null) => void;
   setCompositeImageUrl: (url: string | null) => void;
@@ -93,7 +99,7 @@ export function PhotoBoothProvider({ children }: { children: React.ReactNode }) 
     selectDesign: (d) => dispatch({ type: 'SELECT_DESIGN', payload: d }),
     addPhoto: (p) => dispatch({ type: 'ADD_PHOTO', payload: p }),
     setCurrentPhotoIndex: (i) => dispatch({ type: 'SET_CURRENT_PHOTO_INDEX', payload: i }),
-    addPreparationFrame: (f) => dispatch({ type: 'ADD_PREP_FRAME', payload: f }),
+    addPoseFrame: (frame, poseIndex) => dispatch({ type: 'ADD_POSE_FRAME', payload: { frame, poseIndex } }),
     setTemplate: (t) => dispatch({ type: 'SET_TEMPLATE', payload: t }),
     setGifUrl: (u) => dispatch({ type: 'SET_GIF_URL', payload: u }),
     setCompositeImageUrl: (u) => dispatch({ type: 'SET_COMPOSITE_URL', payload: u }),

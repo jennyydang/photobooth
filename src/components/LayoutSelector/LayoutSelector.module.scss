@@ -13,12 +13,12 @@
   &__title {
     font-size: 2rem;
     font-weight: 900;
-    color: white;
+    color: var(--text-primary);
     margin-bottom: 0.5rem;
   }
 
   &__subtitle {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-secondary);
   }
 
   &__grid {
@@ -36,8 +36,8 @@
   }
 
   &__card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 1rem;
     padding: 0.75rem;
     display: flex;
@@ -48,7 +48,7 @@
     transition: all 0.2s ease;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--card-hover);
       border-color: rgba(233, 30, 140, 0.6);
       transform: scale(1.05);
     }
@@ -62,8 +62,8 @@
     width: 1.4rem;
     height: 1.4rem;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
+    background: var(--card-hover);
+    color: var(--text-secondary);
     font-size: 0.65rem;
     font-weight: 700;
     display: flex;
@@ -91,7 +91,7 @@
   }
 
   &__count {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
     font-size: 0.65rem;
   }
 }

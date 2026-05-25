@@ -21,7 +21,7 @@ export function CameraView() {
     addPhoto,
     setCurrentPhotoIndex,
     setAppState,
-    addPreparationFrame,
+    addPoseFrame,
   } = usePhotoBooth();
   const { videoRef, isReady, error, startCamera, stopCamera, capture } = useCamera();
   const { count, start: startCountdown, stop: stopCountdown } = useCountdown();
@@ -29,6 +29,7 @@ export function CameraView() {
   const [isCapturing, setIsCapturing] = useState(false);
   const isMounted = useRef(true);
   const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentPoseRef = useRef<number>(0);
 
   useEffect(() => {
     startCamera();
@@ -46,11 +47,12 @@ export function CameraView() {
   const capturedCount = capturedPhotos.length;
   const isDone = capturedCount >= totalPhotos;
 
-  const startFrameCapture = () => {
+  const startFrameCapture = (poseIndex: number) => {
+    currentPoseRef.current = poseIndex;
     frameIntervalRef.current = setInterval(async () => {
       if (!isMounted.current || !videoRef.current || !isReady) return;
       const url = await capture(true);
-      if (url && isMounted.current) addPreparationFrame(url);
+      if (url && isMounted.current) addPoseFrame(url, currentPoseRef.current);
     }, PREP_FRAME_INTERVAL_MS);
   };
 
@@ -64,12 +66,13 @@ export function CameraView() {
   const handleCapture = async () => {
     if (isCapturing || !isReady || isDone) return;
     setIsCapturing(true);
-    startFrameCapture();
 
     const runShot = async (index: number) => {
       if (!isMounted.current) return;
 
+      startFrameCapture(index);
       await new Promise<void>((resolve) => startCountdown(COUNTDOWN_FROM, resolve));
+      stopFrameCapture();
       if (!isMounted.current) return;
 
       const dataUrl = await capture(true);
@@ -83,7 +86,6 @@ export function CameraView() {
           await new Promise((r) => setTimeout(r, BETWEEN_SHOT_DELAY));
           if (isMounted.current) await runShot(index + 1);
         } else if (isMounted.current) {
-          stopFrameCapture();
           setIsCapturing(false);
           setTimeout(() => isMounted.current && setAppState('review'), 800);
         }
@@ -100,7 +102,7 @@ export function CameraView() {
   return (
     <div className={cls(styles['camera-view'], 'flex flex-col items-center gap-6 w-full max-w-3xl mx-auto')}>
       <div className={cls(styles['camera-view__header'], 'flex items-center justify-between w-full')}>
-        <h2 className={cls(styles['camera-view__title'], 'text-2xl font-bold text-white')}>
+        <h2 className={cls(styles['camera-view__title'], 'text-2xl font-bold text-gray-900 dark:text-white')}>
           {selectedLayout.name}
         </h2>
         <div className={cls(styles['camera-view__progress'], 'flex gap-2')}>
@@ -109,7 +111,7 @@ export function CameraView() {
               key={i}
               className={cls(
                 `${styles['camera-view__dot']} ${i < capturedCount ? styles['camera-view__dot--done'] : i === capturedCount ? styles['camera-view__dot--current'] : ''}`,
-                `w-3 h-3 rounded-full transition-colors ${i < capturedCount ? 'bg-pink-500' : i === capturedCount ? 'bg-white' : 'bg-white/30'}`
+                `w-3 h-3 rounded-full transition-colors ${i < capturedCount ? 'bg-pink-500' : i === capturedCount ? 'bg-gray-800 dark:bg-white' : 'bg-gray-300 dark:bg-white/30'}`
               )}
             />
           ))}
@@ -153,18 +155,18 @@ export function CameraView() {
             disabled={isCapturing || !isReady || !!error}
             className={cls(
               `${styles['camera-view__btn']} ${isCapturing || !isReady ? styles['camera-view__btn--disabled'] : ''}`,
-              `px-10 py-4 rounded-full font-bold text-lg transition-all text-white ${isCapturing || !isReady ? 'bg-white/20 cursor-not-allowed opacity-50' : 'bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 active:scale-95 shadow-lg shadow-pink-500/30'}`
+              `px-10 py-4 rounded-full font-bold text-lg transition-all text-white ${isCapturing || !isReady ? 'bg-gray-300 dark:bg-white/20 cursor-not-allowed opacity-50' : 'bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 active:scale-95 shadow-lg shadow-pink-500/30'}`
             )}
           >
             {isCapturing ? `📸 Capturing ${currentPhotoIndex + 1}/${totalPhotos}…` : 'Start Session'}
           </button>
         ) : (
-          <div className={cls(styles['camera-view__done'], 'text-green-400 font-semibold text-lg')}>
+          <div className={cls(styles['camera-view__done'], 'text-green-600 dark:text-green-400 font-semibold text-lg')}>
             ✓ All photos captured! Preparing review…
           </div>
         )}
 
-        <p className={cls(styles['camera-view__tip'], 'text-white/40 text-sm text-center')}>
+        <p className={cls(styles['camera-view__tip'], 'text-gray-400 dark:text-white/40 text-sm text-center')}>
           {isCapturing
             ? 'Smile and stay still when the countdown reaches 0'
             : isReady

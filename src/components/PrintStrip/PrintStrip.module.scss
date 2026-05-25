@@ -7,8 +7,8 @@
   &__frame {
     border-radius: 0.75rem;
     overflow: hidden;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-strip);
+    border: 1px solid var(--border);
   }
 
   &__loading {
@@ -37,7 +37,7 @@
     align-items: center;
     justify-content: center;
     background: #111827;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-muted);
     font-size: 0.875rem;
   }
 }
