@@ -1,16 +1,17 @@
 import { LayoutConfig } from '@/types';
 
-// Canvas dimensions in px at 300 DPI
-// 2x6: 600x1800 vertical, 1800x600 horizontal
-// 4x6: 1200x1800 vertical, 1800x1200 horizontal
-
-const GAP = 0.01;
+// Canvas dimensions at 300 DPI
+// 2×6 vertical  : 600 × 1800
+// 4×6 portrait  : 1200 × 1800
+// 4×6 landscape : 1800 × 1200
 
 export const LAYOUTS: LayoutConfig[] = [
-  // ─── 2×6 VERTICAL ────────────────────────────────────────────────────────
+  // ── 1: 2×6 · 3 PHOTO ─────────────────────────────────────────────────────
+  // 3 stacked equal photos, graphic bar ~17% at bottom
   {
     id: 'v2x6-3photos',
-    name: '3 Photos + Graphic',
+    number: 1,
+    name: '2×6 · 3 Photo',
     size: '2x6',
     orientation: 'vertical',
     photoCount: 3,
@@ -18,160 +19,201 @@ export const LAYOUTS: LayoutConfig[] = [
     canvasWidth: 600,
     canvasHeight: 1800,
     photoSlots: [
-      { x: 0, y: 0, width: 1, height: 0.31 },
-      { x: 0, y: 0.33, width: 1, height: 0.31 },
-      { x: 0, y: 0.66, width: 1, height: 0.21 },
+      { x: 0, y: 0,     width: 1, height: 0.265 },
+      { x: 0, y: 0.275, width: 1, height: 0.265 },
+      { x: 0, y: 0.550, width: 1, height: 0.265 },
     ],
-    graphicSlot: { x: 0, y: 0.89, width: 1, height: 0.11 },
+    graphicSlot: { x: 0, y: 0.825, width: 1, height: 0.175 },
   },
+
+  // ── 2: 2×6 · 4 PHOTO ─────────────────────────────────────────────────────
   {
     id: 'v2x6-4photos',
-    name: '4 Photos + Small Graphic',
+    number: 2,
+    name: '2×6 · 4 Photo',
     size: '2x6',
     orientation: 'vertical',
     photoCount: 4,
-    description: '4 stacked photos with small graphic at bottom',
+    description: '4 stacked photos with graphic at bottom',
     canvasWidth: 600,
     canvasHeight: 1800,
     photoSlots: [
-      { x: 0, y: 0, width: 1, height: 0.225 },
-      { x: 0, y: 0.235, width: 1, height: 0.225 },
-      { x: 0, y: 0.47, width: 1, height: 0.225 },
-      { x: 0, y: 0.705, width: 1, height: 0.225 },
+      { x: 0, y: 0,     width: 1, height: 0.205 },
+      { x: 0, y: 0.215, width: 1, height: 0.205 },
+      { x: 0, y: 0.430, width: 1, height: 0.205 },
+      { x: 0, y: 0.645, width: 1, height: 0.205 },
     ],
-    graphicSlot: { x: 0, y: 0.94, width: 1, height: 0.06 },
+    graphicSlot: { x: 0, y: 0.860, width: 1, height: 0.140 },
   },
 
-  // ─── 2×6 HORIZONTAL ──────────────────────────────────────────────────────
+  // ── 3: 4×6 PORTRAIT · 6 PHOTO ────────────────────────────────────────────
+  // 2 cols × 3 rows, graphic bar at bottom
   {
-    id: 'h2x6-3photos',
-    name: '3 Photos + Graphic Left',
-    size: '2x6',
-    orientation: 'horizontal',
-    photoCount: 3,
-    description: '3 side-by-side photos with graphic on left',
-    canvasWidth: 1800,
-    canvasHeight: 600,
-    photoSlots: [
-      { x: 0.27, y: 0, width: 0.24, height: 1 },
-      { x: 0.52, y: 0, width: 0.24, height: 1 },
-      { x: 0.76, y: 0, width: 0.24, height: 1 },
-    ],
-    graphicSlot: { x: 0, y: 0, width: 0.25, height: 1 },
-  },
-  {
-    id: 'h2x6-4photos',
-    name: '4 Photos + Graphic Left',
-    size: '2x6',
-    orientation: 'horizontal',
-    photoCount: 4,
-    description: '4 side-by-side photos with graphic on left',
-    canvasWidth: 1800,
-    canvasHeight: 600,
-    photoSlots: [
-      { x: 0.21, y: 0, width: 0.19, height: 1 },
-      { x: 0.41, y: 0, width: 0.19, height: 1 },
-      { x: 0.61, y: 0, width: 0.19, height: 1 },
-      { x: 0.81, y: 0, width: 0.19, height: 1 },
-    ],
-    graphicSlot: { x: 0, y: 0, width: 0.19, height: 1 },
-  },
-
-  // ─── 4×6 VERTICAL ────────────────────────────────────────────────────────
-  {
-    id: 'v4x6-4photos',
-    name: '4 Photos + Graphic',
+    id: 'v4x6-6photos',
+    number: 3,
+    name: '4×6 · 6 Photo',
     size: '4x6',
     orientation: 'vertical',
-    photoCount: 4,
-    description: '2×2 photo grid with graphic at bottom',
+    photoCount: 6,
+    description: '2×3 grid of photos with graphic at bottom',
     canvasWidth: 1200,
     canvasHeight: 1800,
     photoSlots: [
-      { x: 0, y: 0, width: 0.495, height: 0.32 },
-      { x: 0.505, y: 0, width: 0.495, height: 0.32 },
-      { x: 0, y: 0.33, width: 0.495, height: 0.32 },
-      { x: 0.505, y: 0.33, width: 0.495, height: 0.32 },
+      { x: 0,     y: 0,     width: 0.495, height: 0.260 },
+      { x: 0.505, y: 0,     width: 0.495, height: 0.260 },
+      { x: 0,     y: 0.270, width: 0.495, height: 0.260 },
+      { x: 0.505, y: 0.270, width: 0.495, height: 0.260 },
+      { x: 0,     y: 0.540, width: 0.495, height: 0.260 },
+      { x: 0.505, y: 0.540, width: 0.495, height: 0.260 },
     ],
-    graphicSlot: { x: 0, y: 0.67, width: 1, height: 0.33 },
+    graphicSlot: { x: 0, y: 0.810, width: 1, height: 0.190 },
   },
+
+  // ── 4: 4×6 PORTRAIT · 1 PHOTO ────────────────────────────────────────────
   {
     id: 'v4x6-1photo',
-    name: '1 Photo + Graphic',
+    number: 4,
+    name: '4×6 Portrait · 1 Photo',
     size: '4x6',
     orientation: 'vertical',
     photoCount: 1,
-    description: '1 large photo with graphic at bottom',
+    description: '1 large portrait photo with graphic at bottom',
     canvasWidth: 1200,
     canvasHeight: 1800,
-    photoSlots: [{ x: 0, y: 0, width: 1, height: 0.70 }],
-    graphicSlot: { x: 0, y: 0.72, width: 1, height: 0.28 },
-  },
-  {
-    id: 'v4x6-2photos',
-    name: '2 Photos + Graphic',
-    size: '4x6',
-    orientation: 'vertical',
-    photoCount: 2,
-    description: '2 stacked photos with graphic at bottom',
-    canvasWidth: 1200,
-    canvasHeight: 1800,
-    photoSlots: [
-      { x: 0, y: 0, width: 1, height: 0.32 },
-      { x: 0, y: 0.34, width: 1, height: 0.32 },
-    ],
-    graphicSlot: { x: 0, y: 0.68, width: 1, height: 0.32 },
+    photoSlots: [{ x: 0, y: 0, width: 1, height: 0.72 }],
+    graphicSlot: { x: 0, y: 0.74, width: 1, height: 0.26 },
   },
 
-  // ─── 4×6 HORIZONTAL ──────────────────────────────────────────────────────
+  // ── 5: 4×6 LANDSCAPE · 1 PHOTO ───────────────────────────────────────────
   {
     id: 'h4x6-1photo',
-    name: '1 Photo + Graphic',
+    number: 5,
+    name: '4×6 Landscape · 1 Photo',
     size: '4x6',
     orientation: 'horizontal',
     photoCount: 1,
-    description: '1 large photo with graphic at bottom',
+    description: '1 large landscape photo with graphic at bottom',
     canvasWidth: 1800,
     canvasHeight: 1200,
     photoSlots: [{ x: 0, y: 0, width: 1, height: 0.74 }],
     graphicSlot: { x: 0, y: 0.76, width: 1, height: 0.24 },
   },
+
+  // ── 6: 4×6 LANDSCAPE · 3 PHOTO (row) ─────────────────────────────────────
   {
-    id: 'h4x6-4photos',
-    name: '4 Photos + Graphic Top-Right',
+    id: 'h4x6-3photos-row',
+    number: 6,
+    name: '4×6 Landscape · 3 Photo',
     size: '4x6',
     orientation: 'horizontal',
-    photoCount: 4,
-    description: 'Half-width photo top-left, graphic top-right, 3 photos below',
+    photoCount: 3,
+    description: '3 side-by-side photos with graphic at bottom',
     canvasWidth: 1800,
     canvasHeight: 1200,
     photoSlots: [
-      { x: 0, y: 0, width: 0.49, height: 0.49 },
-      { x: 0, y: 0.51, width: 0.32, height: 0.49 },
+      { x: 0,     y: 0, width: 0.327, height: 0.75 },
+      { x: 0.337, y: 0, width: 0.326, height: 0.75 },
+      { x: 0.674, y: 0, width: 0.326, height: 0.75 },
+    ],
+    graphicSlot: { x: 0, y: 0.77, width: 1, height: 0.23 },
+  },
+
+  // ── 7: 4×6 LANDSCAPE · 3 PHOTO (1 left + 2 stacked right) ───────────────
+  {
+    id: 'h4x6-3photos-1L2R',
+    number: 7,
+    name: '4×6 Landscape · 3 Photo',
+    size: '4x6',
+    orientation: 'horizontal',
+    photoCount: 3,
+    description: '1 large left photo, 2 stacked right, graphic at bottom',
+    canvasWidth: 1800,
+    canvasHeight: 1200,
+    photoSlots: [
+      { x: 0,    y: 0,    width: 0.49, height: 0.76 },
+      { x: 0.51, y: 0,    width: 0.49, height: 0.37 },
+      { x: 0.51, y: 0.39, width: 0.49, height: 0.37 },
+    ],
+    graphicSlot: { x: 0, y: 0.78, width: 1, height: 0.22 },
+  },
+
+  // ── 8: 4×6 LANDSCAPE · 3 PHOTO (asymmetric grid) ─────────────────────────
+  // Top-left large, top-right small, bottom-left small, bottom-right = graphic
+  {
+    id: 'h4x6-3photos-asymgrid',
+    number: 8,
+    name: '4×6 Landscape · 3 Photo',
+    size: '4x6',
+    orientation: 'horizontal',
+    photoCount: 3,
+    description: 'Asymmetric grid — graphic in bottom-right',
+    canvasWidth: 1800,
+    canvasHeight: 1200,
+    photoSlots: [
+      { x: 0,    y: 0,    width: 0.58, height: 0.49 },
+      { x: 0.60, y: 0,    width: 0.40, height: 0.49 },
+      { x: 0,    y: 0.51, width: 0.40, height: 0.49 },
+    ],
+    graphicSlot: { x: 0.42, y: 0.51, width: 0.58, height: 0.49 },
+  },
+
+  // ── 9: 4×6 LANDSCAPE · 4 PHOTO (T-shape) ─────────────────────────────────
+  // Top-left photo, top-right graphic, 3 photos across bottom
+  {
+    id: 'h4x6-4photos-T',
+    number: 9,
+    name: '4×6 Landscape · 4 Photo',
+    size: '4x6',
+    orientation: 'horizontal',
+    photoCount: 4,
+    description: '1 photo top-left, graphic top-right, 3 photos across bottom',
+    canvasWidth: 1800,
+    canvasHeight: 1200,
+    photoSlots: [
+      { x: 0,    y: 0,    width: 0.49, height: 0.49 },
+      { x: 0,    y: 0.51, width: 0.32, height: 0.49 },
       { x: 0.34, y: 0.51, width: 0.32, height: 0.49 },
       { x: 0.68, y: 0.51, width: 0.32, height: 0.49 },
     ],
     graphicSlot: { x: 0.51, y: 0, width: 0.49, height: 0.49 },
   },
+
+  // ── 10: 4×6 LANDSCAPE · 2 PHOTO (left stack + graphic right) ─────────────
   {
-    id: 'h4x6-2photos',
-    name: '2 Photos Left + Graphic Right',
+    id: 'h4x6-2photos-left',
+    number: 10,
+    name: '4×6 Landscape · 2 Photo',
     size: '4x6',
     orientation: 'horizontal',
     photoCount: 2,
-    description: '2 stacked photos on left, graphic on right',
+    description: '2 photos stacked on left, graphic on right',
     canvasWidth: 1800,
     canvasHeight: 1200,
     photoSlots: [
-      { x: 0, y: 0, width: 0.49, height: 0.49 },
+      { x: 0, y: 0,    width: 0.49, height: 0.49 },
       { x: 0, y: 0.51, width: 0.49, height: 0.49 },
     ],
     graphicSlot: { x: 0.51, y: 0, width: 0.49, height: 1 },
   },
-];
 
-export const getLayoutsBySize = (size: '2x6' | '4x6') =>
-  LAYOUTS.filter((l) => l.size === size);
+  // ── 11: 4×6 LANDSCAPE · 2 PHOTO (side-by-side + graphic bottom) ──────────
+  {
+    id: 'h4x6-2photos-row',
+    number: 11,
+    name: '4×6 Landscape · 2 Photo',
+    size: '4x6',
+    orientation: 'horizontal',
+    photoCount: 2,
+    description: '2 side-by-side photos with graphic at bottom',
+    canvasWidth: 1800,
+    canvasHeight: 1200,
+    photoSlots: [
+      { x: 0,    y: 0, width: 0.49, height: 0.76 },
+      { x: 0.51, y: 0, width: 0.49, height: 0.76 },
+    ],
+    graphicSlot: { x: 0, y: 0.78, width: 1, height: 0.22 },
+  },
+];
 
 export const getLayoutById = (id: string) =>
   LAYOUTS.find((l) => l.id === id) ?? null;

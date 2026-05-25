@@ -10,16 +10,25 @@ import styles from './CameraView.module.scss';
 
 const COUNTDOWN_FROM = 3;
 const BETWEEN_SHOT_DELAY = 1500;
+const PREP_FRAME_INTERVAL_MS = 400;
 
 export function CameraView() {
   const { cls } = useStyle();
-  const { selectedLayout, capturedPhotos, currentPhotoIndex, addPhoto, setCurrentPhotoIndex, setAppState } =
-    usePhotoBooth();
+  const {
+    selectedLayout,
+    capturedPhotos,
+    currentPhotoIndex,
+    addPhoto,
+    setCurrentPhotoIndex,
+    setAppState,
+    addPreparationFrame,
+  } = usePhotoBooth();
   const { videoRef, isReady, error, startCamera, stopCamera, capture } = useCamera();
   const { count, start: startCountdown, stop: stopCountdown } = useCountdown();
   const [flash, setFlash] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const isMounted = useRef(true);
+  const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     startCamera();
@@ -27,6 +36,7 @@ export function CameraView() {
       isMounted.current = false;
       stopCamera();
       stopCountdown();
+      if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -36,17 +46,30 @@ export function CameraView() {
   const capturedCount = capturedPhotos.length;
   const isDone = capturedCount >= totalPhotos;
 
+  const startFrameCapture = () => {
+    frameIntervalRef.current = setInterval(async () => {
+      if (!isMounted.current || !videoRef.current || !isReady) return;
+      const url = await capture(true);
+      if (url && isMounted.current) addPreparationFrame(url);
+    }, PREP_FRAME_INTERVAL_MS);
+  };
+
+  const stopFrameCapture = () => {
+    if (frameIntervalRef.current) {
+      clearInterval(frameIntervalRef.current);
+      frameIntervalRef.current = null;
+    }
+  };
+
   const handleCapture = async () => {
     if (isCapturing || !isReady || isDone) return;
     setIsCapturing(true);
+    startFrameCapture();
 
     const runShot = async (index: number) => {
       if (!isMounted.current) return;
 
-      await new Promise<void>((resolve) =>
-        startCountdown(COUNTDOWN_FROM, resolve)
-      );
-
+      await new Promise<void>((resolve) => startCountdown(COUNTDOWN_FROM, resolve));
       if (!isMounted.current) return;
 
       const dataUrl = await capture(true);
@@ -60,6 +83,7 @@ export function CameraView() {
           await new Promise((r) => setTimeout(r, BETWEEN_SHOT_DELAY));
           if (isMounted.current) await runShot(index + 1);
         } else if (isMounted.current) {
+          stopFrameCapture();
           setIsCapturing(false);
           setTimeout(() => isMounted.current && setAppState('review'), 800);
         }
@@ -67,7 +91,10 @@ export function CameraView() {
     };
 
     await runShot(capturedCount);
-    if (isMounted.current) setIsCapturing(false);
+    if (isMounted.current) {
+      stopFrameCapture();
+      setIsCapturing(false);
+    }
   };
 
   return (

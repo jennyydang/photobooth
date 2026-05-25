@@ -7,12 +7,28 @@ import { useGif } from '@/hooks/useGif';
 import { downloadDataUrl } from '@/utils/imageUtils';
 import { StyleToggle } from '@/components/StyleToggle/StyleToggle';
 import { LayoutSelector } from '@/components/LayoutSelector/LayoutSelector';
+import { DesignSelector } from '@/components/DesignSelector/DesignSelector';
 import { CameraView } from '@/components/CameraView/CameraView';
 import { PrintStrip } from '@/components/PrintStrip/PrintStrip';
 import { EmailForm } from '@/components/EmailForm/EmailForm';
 import { PrintControls } from '@/components/PrintControls/PrintControls';
-import { TemplateManager } from '@/components/TemplateManager/TemplateManager';
 import styles from './PhotoBooth.module.scss';
+
+const STEPS = ['layout-select', 'design-select', 'capturing', 'review', 'share', 'print'] as const;
+const STEP_LABELS: Record<string, string> = {
+  'layout-select': 'Layout',
+  'design-select': 'Design',
+  capturing: 'Camera',
+  review: 'Review',
+  share: 'Share',
+  print: 'Print',
+};
+
+function getDisplayScale(layout: { orientation: string; size: string } | null): number {
+  if (!layout) return 0.22;
+  if (layout.orientation === 'vertical') return 0.2;
+  return 0.26;
+}
 
 export function PhotoBooth() {
   const { cls } = useStyle();
@@ -21,22 +37,20 @@ export function PhotoBooth() {
     setAppState,
     capturedPhotos,
     selectedLayout,
+    selectedDesign,
+    preparationFrames,
     resetSession,
   } = usePhotoBooth();
-  const { gifUrl, isCreating: isCreatingGif, createGif, setGifUrl } = useGif();
+  const { gifUrl, isCreating: isCreatingGif, createFrameGif, setGifUrl } = useGif();
   const [compositeUrl, setCompositeUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'email' | 'print' | 'template'>('email');
 
   const handleComposed = useCallback((url: string) => {
     setCompositeUrl(url);
   }, []);
 
   const handleCreateGif = async () => {
-    if (capturedPhotos.length === 0) return;
-    const photos = capturedPhotos.map((p) => p.dataUrl);
-    const w = selectedLayout?.canvasWidth ?? 600;
-    const h = selectedLayout?.canvasHeight ?? 400;
-    await createGif(photos, Math.min(w, 600), Math.min(h, 400));
+    if (!selectedLayout) return;
+    await createFrameGif(preparationFrames, selectedLayout, selectedDesign);
   };
 
   const handleReset = () => {
@@ -45,13 +59,15 @@ export function PhotoBooth() {
     resetSession();
   };
 
+  const currentStepIdx = STEPS.indexOf(appState as typeof STEPS[number]);
+
   return (
     <div className={cls(styles.photobooth, 'min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 text-white')}>
       <StyleToggle />
 
       <div className={cls(styles.photobooth__container, 'max-w-6xl mx-auto px-4 py-8')}>
 
-        {/* Header */}
+        {/* ─── Header ─────────────────────────────────────────────────────── */}
         <header className={cls(styles.photobooth__header, 'text-center mb-10')}>
           <div className={cls(styles['photobooth__logo'], 'inline-flex items-center gap-3 mb-3')}>
             <span className="text-4xl">📸</span>
@@ -59,29 +75,19 @@ export function PhotoBooth() {
               Photo Booth
             </h1>
           </div>
+
           {appState !== 'welcome' && (
             <nav className={cls(styles['photobooth__breadcrumb'], 'flex items-center justify-center gap-2 mt-4 text-sm text-white/40')}>
-              {(['layout-select', 'capturing', 'review', 'share', 'print'] as const).map((s, i) => {
-                const labels: Record<string, string> = {
-                  'layout-select': 'Layout',
-                  capturing: 'Camera',
-                  review: 'Review',
-                  share: 'Share',
-                  print: 'Print',
-                };
-                const states = ['layout-select', 'capturing', 'review', 'share', 'print'];
-                const current = states.indexOf(appState);
+              {STEPS.map((s, i) => {
                 const isActive = s === appState;
-                const isPast = states.indexOf(s) < current;
-
+                const isPast = i < currentStepIdx;
                 return (
                   <span key={s} className="flex items-center gap-2">
                     {i > 0 && <span className="text-white/20">›</span>}
-                    <span className={cls(
-                      '',
-                      `${isActive ? 'text-pink-400 font-semibold' : isPast ? 'text-white/60' : 'text-white/30'}`
-                    )}>
-                      {labels[s]}
+                    <span className={
+                      isActive ? 'text-pink-400 font-semibold' : isPast ? 'text-white/60' : 'text-white/25'
+                    }>
+                      {STEP_LABELS[s]}
                     </span>
                   </span>
                 );
@@ -90,27 +96,28 @@ export function PhotoBooth() {
           )}
         </header>
 
-        {/* Welcome */}
+        {/* ─── Welcome ────────────────────────────────────────────────────── */}
         {appState === 'welcome' && (
           <div className={cls(styles['photobooth__welcome'], 'flex flex-col items-center gap-8 text-center max-w-xl mx-auto')}>
-            <div className={cls(styles['photobooth__welcome-hero'], 'text-8xl animate-bounce')}>📸</div>
+            <div className={cls(styles['photobooth__welcome-hero'], 'text-8xl')}>📸</div>
             <div>
               <h2 className={cls(styles['photobooth__welcome-title'], 'text-3xl font-black text-white mb-3')}>
                 Strike a Pose!
               </h2>
               <p className={cls(styles['photobooth__welcome-text'], 'text-white/60 text-lg leading-relaxed')}>
-                Choose your layout, smile for the camera, and get a beautiful photo strip printed in seconds.
+                Pick a layout, choose your design, smile for the camera — then download, share, or print your strip.
               </p>
             </div>
-            <div className={cls(styles['photobooth__features'], 'grid grid-cols-3 gap-4 text-center text-sm')}>
+            <div className={cls(styles['photobooth__features'], 'grid grid-cols-3 gap-4 w-full')}>
               {[
-                { icon: '🎞', label: '2×6 & 4×6 strips' },
-                { icon: '✉️', label: 'Email your photos' },
-                { icon: '🖨', label: 'Print on any printer' },
+                { icon: '🎞', label: '11 layouts', sub: '2×6 & 4×6' },
+                { icon: '🎨', label: '3 designs', sub: '+ custom upload' },
+                { icon: '🎬', label: 'GIF included', sub: 'getting-ready moments' },
               ].map((f) => (
-                <div key={f.label} className={cls('', 'bg-white/5 rounded-xl p-3')}>
-                  <div className="text-2xl mb-1">{f.icon}</div>
-                  <div className="text-white/60">{f.label}</div>
+                <div key={f.label} className={cls('', 'bg-white/5 rounded-2xl p-4 text-center')}>
+                  <div className="text-3xl mb-2">{f.icon}</div>
+                  <div className="text-white font-semibold text-sm">{f.label}</div>
+                  <div className="text-white/40 text-xs mt-0.5">{f.sub}</div>
                 </div>
               ))}
             </div>
@@ -126,110 +133,132 @@ export function PhotoBooth() {
           </div>
         )}
 
-        {/* Layout Select */}
+        {/* ─── Layout Select ───────────────────────────────────────────────── */}
         {appState === 'layout-select' && <LayoutSelector />}
 
-        {/* Capturing */}
+        {/* ─── Design Select ───────────────────────────────────────────────── */}
+        {appState === 'design-select' && <DesignSelector />}
+
+        {/* ─── Capturing ──────────────────────────────────────────────────── */}
         {appState === 'capturing' && <CameraView />}
 
-        {/* Review */}
+        {/* ─── Review ─────────────────────────────────────────────────────── */}
         {appState === 'review' && selectedLayout && (
           <div className={cls(styles['photobooth__review'], 'flex flex-col lg:flex-row gap-8 items-start justify-center')}>
             <div className={cls(styles['photobooth__review-strip'], 'flex flex-col items-center gap-4')}>
-              <h2 className={cls('', 'text-2xl font-bold text-white')}>Your Strip</h2>
-              <PrintStrip
-                onComposed={handleComposed}
-                displayScale={selectedLayout.orientation === 'vertical' ? 0.22 : 0.3}
-              />
-              <div className={cls('', 'flex gap-3')}>
+              <h2 className="text-2xl font-bold text-white">Your Strip</h2>
+              <PrintStrip onComposed={handleComposed} displayScale={getDisplayScale(selectedLayout)} />
+              <div className="flex gap-3">
                 <button
-                  onClick={() => setAppState('capturing')}
-                  className={cls(
-                    '',
-                    'px-5 py-2.5 rounded-full border border-white/20 text-white/70 hover:text-white hover:border-white/40 text-sm font-medium transition-all'
-                  )}
+                  onClick={() => { setCompositeUrl(null); setAppState('capturing'); }}
+                  className={cls('', 'px-5 py-2.5 rounded-full border border-white/20 text-white/70 hover:text-white hover:border-white/40 text-sm font-medium transition-all')}
                 >
                   ↺ Retake
                 </button>
                 <button
                   onClick={() => setAppState('share')}
-                  className={cls(
-                    '',
-                    'px-5 py-2.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-bold shadow-lg shadow-pink-500/30 hover:scale-105 active:scale-95 transition-transform'
-                  )}
+                  className={cls('', 'px-5 py-2.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-bold shadow-lg shadow-pink-500/30 hover:scale-105 active:scale-95 transition-transform')}
                 >
                   Continue →
                 </button>
               </div>
             </div>
 
-            <div className={cls(styles['photobooth__review-photos'], 'flex flex-col gap-3')}>
-              <h3 className={cls('', 'text-lg font-semibold text-white/80')}>Captured Photos</h3>
-              <div className={cls('', 'grid grid-cols-2 gap-2 max-w-xs')}>
+            <div className="flex flex-col gap-3">
+              <h3 className="text-lg font-semibold text-white/80">Captured Photos</h3>
+              <div className="grid grid-cols-2 gap-2 max-w-xs">
                 {capturedPhotos.map((photo, i) => (
-                  <div key={photo.id} className={cls('', 'relative rounded-lg overflow-hidden aspect-video bg-gray-800')}>
+                  <div key={photo.id} className="relative rounded-lg overflow-hidden aspect-video bg-gray-800">
                     <img src={photo.dataUrl} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
-                    <div className={cls('', 'absolute bottom-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center text-white text-xs font-bold')}>
+                    <div className="absolute bottom-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center text-white text-xs font-bold">
                       {i + 1}
                     </div>
                   </div>
                 ))}
               </div>
-              <TemplateManager />
+
+              {selectedDesign && (
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex gap-3 items-center">
+                  <div className="text-2xl">🎨</div>
+                  <div>
+                    <div className="text-white text-sm font-semibold">{selectedDesign.name}</div>
+                    <button
+                      onClick={() => setAppState('design-select')}
+                      className="text-pink-400 text-xs hover:text-pink-300"
+                    >
+                      Change design
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Share */}
+        {/* ─── Share ──────────────────────────────────────────────────────── */}
         {appState === 'share' && (
           <div className={cls(styles['photobooth__share'], 'flex flex-col lg:flex-row gap-8 items-start justify-center')}>
-            <div className={cls('', 'flex flex-col items-center gap-4')}>
-              <h2 className={cls('', 'text-2xl font-bold text-white')}>Your Strip</h2>
-              <PrintStrip
-                onComposed={handleComposed}
-                displayScale={selectedLayout?.orientation === 'vertical' ? 0.22 : 0.3}
-              />
+            <div className="flex flex-col items-center gap-4">
+              <h2 className="text-2xl font-bold text-white">Your Strip</h2>
+              <PrintStrip onComposed={handleComposed} displayScale={getDisplayScale(selectedLayout)} />
 
-              {/* GIF section */}
-              <div className={cls('', 'w-full bg-white/5 border border-white/10 rounded-2xl p-4')}>
-                <h3 className={cls('', 'text-sm font-bold text-white/80 mb-3')}>🎞 Animated GIF</h3>
+              {/* GIF panel */}
+              <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-4">
+                <h3 className="text-sm font-bold text-white mb-3">🎬 Getting-Ready GIF</h3>
                 {gifUrl ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <img src={gifUrl} alt="Animated GIF" className="w-32 rounded-lg" />
+                  <div className="flex flex-col items-center gap-3">
+                    <img
+                      src={gifUrl}
+                      alt="Animated GIF"
+                      className="rounded-xl border border-white/10 max-w-full"
+                      style={{ maxHeight: 180 }}
+                    />
                     <button
-                      onClick={() => downloadDataUrl(gifUrl, 'photobooth.gif')}
-                      className="text-xs text-pink-400 hover:text-pink-300 font-medium"
+                      onClick={() => downloadDataUrl(gifUrl, `photobooth-gif-${Date.now()}.gif`)}
+                      className="text-sm text-pink-400 hover:text-pink-300 font-medium"
                     >
                       ⬇ Download GIF
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={handleCreateGif}
-                    disabled={isCreatingGif}
-                    className={cls('', `w-full py-2 rounded-xl text-sm font-medium transition-all ${isCreatingGif ? 'bg-white/10 text-white/40 cursor-wait' : 'bg-white/10 hover:bg-white/15 text-white/70 hover:text-white'}`)}
-                  >
-                    {isCreatingGif ? 'Creating GIF…' : 'Create Animated GIF'}
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-white/40 text-xs">
+                      {preparationFrames.length > 0
+                        ? `${preparationFrames.length} frames captured — composited in your frame`
+                        : 'No preparation frames recorded'}
+                    </p>
+                    <button
+                      onClick={handleCreateGif}
+                      disabled={isCreatingGif || preparationFrames.length === 0}
+                      className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        isCreatingGif || preparationFrames.length === 0
+                          ? 'bg-white/10 text-white/30 cursor-not-allowed'
+                          : 'bg-white/10 hover:bg-white/15 text-white hover:scale-[1.02]'
+                      }`}
+                    >
+                      {isCreatingGif ? 'Creating GIF…' : 'Create Getting-Ready GIF'}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className={cls('', 'flex flex-col gap-4 w-full max-w-sm')}>
-              <div className={cls('', 'flex flex-col gap-2')}>
-                {/* Download PNG */}
-                <button
-                  onClick={() => compositeUrl && downloadDataUrl(compositeUrl, `photobooth-${Date.now()}.png`)}
-                  disabled={!compositeUrl}
-                  className={cls('', `w-full py-3 px-6 rounded-xl font-bold text-white transition-all ${!compositeUrl ? 'bg-white/10 opacity-50 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90 active:scale-95'}`)}
-                >
-                  ⬇ Download PNG
-                </button>
-              </div>
+            <div className="flex flex-col gap-4 w-full max-w-sm">
+              <button
+                onClick={() => compositeUrl && downloadDataUrl(compositeUrl, `photobooth-${Date.now()}.png`)}
+                disabled={!compositeUrl}
+                className={`w-full py-3 px-6 rounded-xl font-bold text-white transition-all ${
+                  !compositeUrl
+                    ? 'bg-white/10 opacity-50 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90 active:scale-95'
+                }`}
+              >
+                ⬇ Download PNG Strip
+              </button>
 
               <EmailForm compositeUrl={compositeUrl} gifUrl={gifUrl} />
 
-              <div className={cls('', 'border-t border-white/10 pt-4 flex justify-between items-center')}>
+              <div className="border-t border-white/10 pt-4 flex justify-between items-center">
                 <button
                   onClick={() => setAppState('print')}
                   className={cls('', 'px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-colors')}
@@ -247,16 +276,13 @@ export function PhotoBooth() {
           </div>
         )}
 
-        {/* Print */}
+        {/* ─── Print ──────────────────────────────────────────────────────── */}
         {appState === 'print' && (
           <div className={cls(styles['photobooth__print'], 'flex flex-col lg:flex-row gap-8 items-start justify-center')}>
-            <div className={cls('', 'flex flex-col items-center gap-4')}>
-              <PrintStrip
-                onComposed={handleComposed}
-                displayScale={selectedLayout?.orientation === 'vertical' ? 0.22 : 0.3}
-              />
+            <div className="flex flex-col items-center gap-4">
+              <PrintStrip onComposed={handleComposed} displayScale={getDisplayScale(selectedLayout)} />
             </div>
-            <div className={cls('', 'flex flex-col gap-4 w-full max-w-sm')}>
+            <div className="flex flex-col gap-4 w-full max-w-sm">
               <PrintControls compositeUrl={compositeUrl} />
               <button
                 onClick={() => setAppState('share')}

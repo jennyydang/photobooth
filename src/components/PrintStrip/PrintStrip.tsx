@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePhotoBooth } from '@/contexts/PhotoBoothContext';
 import { useStyle } from '@/contexts/StyleContext';
 import { composeStrip } from '@/utils/imageUtils';
@@ -13,7 +13,7 @@ interface PrintStripProps {
 
 export function PrintStrip({ onComposed, displayScale = 0.25 }: PrintStripProps) {
   const { cls } = useStyle();
-  const { selectedLayout, capturedPhotos, template } = usePhotoBooth();
+  const { selectedLayout, capturedPhotos, selectedDesign } = usePhotoBooth();
   const [compositeUrl, setCompositeUrl] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
 
@@ -23,13 +23,13 @@ export function PrintStrip({ onComposed, displayScale = 0.25 }: PrintStripProps)
     setIsComposing(true);
     const photoUrls = capturedPhotos.map((p) => p.dataUrl);
 
-    composeStrip(selectedLayout, photoUrls, template)
+    composeStrip(selectedLayout, photoUrls, selectedDesign)
       .then((url) => {
         setCompositeUrl(url);
         onComposed?.(url);
       })
       .finally(() => setIsComposing(false));
-  }, [selectedLayout, capturedPhotos, template, onComposed]);
+  }, [selectedLayout, capturedPhotos, selectedDesign, onComposed]);
 
   if (!selectedLayout) return null;
 
@@ -43,18 +43,23 @@ export function PrintStrip({ onComposed, displayScale = 0.25 }: PrintStripProps)
         style={{ width: displayW, height: displayH }}
       >
         {isComposing ? (
-          <div className={cls(styles['print-strip__loading'], 'w-full h-full flex items-center justify-center bg-gray-900')}>
+          <div className={cls(styles['print-strip__loading'], 'w-full h-full flex items-center justify-center bg-gray-900')}
+            style={{ width: displayW, height: displayH }}
+          >
             <div className={cls(styles['print-strip__spinner'], 'w-8 h-8 border-2 border-pink-500/30 border-t-pink-500 rounded-full animate-spin')} />
           </div>
         ) : compositeUrl ? (
           <img
             src={compositeUrl}
             alt="Photo strip preview"
-            className={cls(styles['print-strip__image'], 'w-full h-full object-cover')}
-            style={{ width: displayW, height: displayH }}
+            className={cls(styles['print-strip__image'], 'block')}
+            style={{ width: displayW, height: displayH, objectFit: 'cover' }}
           />
         ) : (
-          <div className={cls(styles['print-strip__placeholder'], 'w-full h-full flex items-center justify-center bg-gray-900 text-white/30 text-sm')}>
+          <div
+            className={cls(styles['print-strip__placeholder'], 'flex items-center justify-center bg-gray-900 text-white/30 text-sm')}
+            style={{ width: displayW, height: displayH }}
+          >
             No photos yet
           </div>
         )}

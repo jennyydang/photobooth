@@ -4,6 +4,7 @@ export type StyleMode = 'bem' | 'tailwind';
 export type AppState =
   | 'welcome'
   | 'layout-select'
+  | 'design-select'
   | 'capturing'
   | 'review'
   | 'share'
@@ -26,6 +27,7 @@ export interface GraphicSlot {
 export interface LayoutConfig {
   id: string;
   name: string;
+  number: number;
   size: PrintSize;
   orientation: Orientation;
   photoCount: number;
@@ -40,6 +42,15 @@ export interface CapturedPhoto {
   id: string;
   dataUrl: string;
   timestamp: number;
+}
+
+export interface DesignConfig {
+  id: string;
+  name: string;
+  description: string;
+  colors: string[];
+  isCustom?: boolean;
+  customDataUrl?: string;
 }
 
 export type PrinterType =

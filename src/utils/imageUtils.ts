@@ -1,4 +1,5 @@
-import { LayoutConfig } from '@/types';
+import { DesignConfig, LayoutConfig } from '@/types';
+import { drawDesignToContext } from './designUtils';
 
 export async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -26,10 +27,39 @@ export function drawCoverFit(
   ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
 }
 
+async function drawGraphicSlot(
+  ctx: CanvasRenderingContext2D,
+  design: DesignConfig | null,
+  gx: number, gy: number, gw: number, gh: number
+) {
+  if (!design) {
+    drawFallbackGraphic(ctx, gx, gy, gw, gh);
+    return;
+  }
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(gx, gy, gw, gh);
+  ctx.clip();
+
+  if (design.isCustom && design.customDataUrl) {
+    try {
+      const img = await loadImage(design.customDataUrl);
+      drawCoverFit(ctx, img, gx, gy, gw, gh);
+    } catch {
+      drawDesignToContext(ctx, 'classic', gx, gy, gw, gh);
+    }
+  } else {
+    drawDesignToContext(ctx, design.id, gx, gy, gw, gh);
+  }
+
+  ctx.restore();
+}
+
 export async function composeStrip(
   layout: LayoutConfig,
   photosDataUrls: string[],
-  graphicDataUrl: string | null,
+  design: DesignConfig | null,
   scale = 1
 ): Promise<string> {
   const w = layout.canvasWidth * scale;
@@ -40,8 +70,8 @@ export async function composeStrip(
   canvas.height = h;
   const ctx = canvas.getContext('2d')!;
 
-  // Background
-  ctx.fillStyle = '#1a1a2e';
+  // Fill whole canvas black (gaps between slots show as black border)
+  ctx.fillStyle = '#111111';
   ctx.fillRect(0, 0, w, h);
 
   // Draw photos
@@ -64,44 +94,22 @@ export async function composeStrip(
     ctx.restore();
   }
 
-  // Draw graphic/template
-  const gSlot = layout.graphicSlot;
-  const gx = gSlot.x * w;
-  const gy = gSlot.y * h;
-  const gw = gSlot.width * w;
-  const gh = gSlot.height * h;
-
-  if (graphicDataUrl) {
-    try {
-      const gImg = await loadImage(graphicDataUrl);
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(gx, gy, gw, gh);
-      ctx.clip();
-      drawCoverFit(ctx, gImg, gx, gy, gw, gh);
-      ctx.restore();
-    } catch {
-      drawDefaultGraphic(ctx, gx, gy, gw, gh);
-    }
-  } else {
-    drawDefaultGraphic(ctx, gx, gy, gw, gh);
-  }
+  // Draw graphic / design slot
+  const g = layout.graphicSlot;
+  await drawGraphicSlot(ctx, design, g.x * w, g.y * h, g.width * w, g.height * h);
 
   return canvas.toDataURL('image/png');
 }
 
-function drawDefaultGraphic(
+function drawFallbackGraphic(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number
+  x: number, y: number, w: number, h: number
 ) {
-  const gradient = ctx.createLinearGradient(x, y, x + w, y + h);
-  gradient.addColorStop(0, '#e91e8c');
-  gradient.addColorStop(0.5, '#9c27b0');
-  gradient.addColorStop(1, '#3f51b5');
-  ctx.fillStyle = gradient;
+  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  grad.addColorStop(0, '#e91e8c');
+  grad.addColorStop(0.5, '#9c27b0');
+  grad.addColorStop(1, '#3f51b5');
+  ctx.fillStyle = grad;
   ctx.fillRect(x, y, w, h);
 
   ctx.save();
@@ -112,6 +120,58 @@ function drawDefaultGraphic(
   ctx.font = `bold ${fontSize}px Arial, sans-serif`;
   ctx.fillText('✨ Photo Booth ✨', x + w / 2, y + h / 2);
   ctx.restore();
+}
+
+/**
+ * Compose a single GIF frame: camera frame fills all photo slots as full-bleed
+ * background, design renders in the graphic slot.
+ */
+export async function composeGifFrame(
+  layout: LayoutConfig,
+  frameDataUrl: string,
+  design: DesignConfig | null,
+  outputW: number,
+  outputH: number
+): Promise<string> {
+  const canvas = document.createElement('canvas');
+  canvas.width = outputW;
+  canvas.height = outputH;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, outputW, outputH);
+
+  // Scale factors from layout canvas to output
+  const sx = outputW / layout.canvasWidth;
+  const sy = outputH / layout.canvasHeight;
+
+  // Draw the live camera frame into each photo slot
+  const img = await loadImage(frameDataUrl);
+  for (const slot of layout.photoSlots) {
+    const dx = slot.x * layout.canvasWidth * sx;
+    const dy = slot.y * layout.canvasHeight * sy;
+    const dw = slot.width * layout.canvasWidth * sx;
+    const dh = slot.height * layout.canvasHeight * sy;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(dx, dy, dw, dh);
+    ctx.clip();
+    drawCoverFit(ctx, img, dx, dy, dw, dh);
+    ctx.restore();
+  }
+
+  // Draw design in graphic slot
+  const g = layout.graphicSlot;
+  await drawGraphicSlot(
+    ctx, design,
+    g.x * layout.canvasWidth * sx,
+    g.y * layout.canvasHeight * sy,
+    g.width * layout.canvasWidth * sx,
+    g.height * layout.canvasHeight * sy
+  );
+
+  return canvas.toDataURL('image/jpeg', 0.82);
 }
 
 export function downloadDataUrl(dataUrl: string, filename: string) {
@@ -135,5 +195,5 @@ export async function captureVideoFrame(
     ctx.scale(-1, 1);
   }
   ctx.drawImage(video, 0, 0);
-  return canvas.toDataURL('image/jpeg', 0.92);
+  return canvas.toDataURL('image/jpeg', 0.85);
 }
